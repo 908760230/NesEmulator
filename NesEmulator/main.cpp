@@ -166,11 +166,14 @@ private:
             nes.cpu.nmi();
 
         // Draw Ram Page 0x00		
-        DrawRam(2, 2, 0x0000, 16, 16);
+        DrawString(2, 2, "Zero Page:");
+        DrawRam(2, 12, 0x0000, 16, 16);
+        DrawString(2, 170, "0x8000 Page:");
         DrawRam(2, 182, 0x8000, 16, 16);
+       
         DrawCpu(448, 2);
-        DrawCode(448, 72, 26);
-
+        DrawString(448, 72, "Code:");
+        DrawCode(448, 82, 26);
 
         DrawString(10, 370, "SPACE = Step Instruction    R = RESET    I = IRQ    N = NMI");
 
@@ -180,7 +183,7 @@ private:
 
 int main() {
     Application app;
-    app.Construct(680, 480, 2, 2);
+    app.Construct(640, 480, 2, 2);
     app.Start();
     return 0;
 }

@@ -71,10 +71,11 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
         lineAddr = addr;
 
         // Prefix line with instruction address
-        std::string sInst = "$" + hex(addr, 4) + ": ";
+        std::string sInst = "$" + hex(addr, 4) + ": "; // 指令的地址
 
         // Read instruction, and get its readable name
-        uint8_t opcode = busPtr->read(addr, true); addr++;
+        uint8_t opcode = busPtr->read(addr, true); 
+        addr++;
         sInst += instructions[opcode].name + " ";
 
         // Get oprands from desired locations, and form the
@@ -88,66 +89,81 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
         }
         else if (instructions[opcode].mode == &Cpu::IMM)
         {
-            value = busPtr->read(addr, true); addr++;
+            value = busPtr->read(addr, true); 
+            addr++;
             sInst += "#$" + hex(value, 2) + " {IMM}";
         }
         else if (instructions[opcode].mode == &Cpu::ZP0)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true);
+            addr++;
             high = 0x00;
             sInst += "$" + hex(low, 2) + " {ZP0}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPX)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
             high = 0x00;
             sInst += "$" + hex(low, 2) + ", X {ZPX}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPY)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
             high = 0x00;
             sInst += "$" + hex(low, 2) + ", Y {ZPY}";
         }
         else if (instructions[opcode].mode == &Cpu::IZX)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true);
+            addr++;
             high = 0x00;
             sInst += "($" + hex(low, 2) + ", X) {IZX}";
         }
         else if (instructions[opcode].mode == &Cpu::IZY)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
             high = 0x00;
             sInst += "($" + hex(low, 2) + "), Y {IZY}";
         }
         else if (instructions[opcode].mode == &Cpu::ABS)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
+            high = busPtr->read(addr, true);
+            addr++;
             sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + " {ABS}";
         }
         else if (instructions[opcode].mode == &Cpu::ABX)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
+            high = busPtr->read(addr, true); 
+            addr++;
             sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + ", X {ABX}";
         }
         else if (instructions[opcode].mode == &Cpu::ABY)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
+            high = busPtr->read(addr, true);
+            addr++;
             sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + ", Y {ABY}";
         }
         else if (instructions[opcode].mode == &Cpu::IND)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->read(addr, true); 
+            addr++;
+            high = busPtr->read(addr, true); 
+            addr++;
             sInst += "($" + hex((uint16_t)(high << 8) | low, 4) + ") {IND}";
         }
         else if (instructions[opcode].mode == &Cpu::REL)
         {
-            value = busPtr->read(addr, true); addr++;
+            value = busPtr->read(addr, true); 
+            addr++;
             sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
         }
 
@@ -307,7 +323,7 @@ uint8_t Cpu::ADC()
     uint16_t tmp = (uint16_t)accumulator + (uint16_t)fetched + (uint16_t)getFlag(C);
     
     setFlag(C, tmp > 255); // 设置进位标志
-    setFlag(Z, (tmp & 0x00FF == 0));
+    setFlag(Z, (tmp & 0x00FF) == 0);
 
     uint16_t flag = ~((uint16_t)accumulator ^ (uint16_t)fetched) & (uint16_t)accumulator ^ (uint16_t)tmp;
     // 设置有符号溢出
@@ -690,7 +706,7 @@ uint8_t Cpu::XXX()
 void Cpu::clock()
 {
     if (cycles == 0) {
-        optCode = read(pc);
+        optCode = read(pc); 
 
         setFlag(U, true); // unused 状态标志 始终设置为1
         pc++;
@@ -714,8 +730,8 @@ void Cpu::clock()
 void Cpu::reset()
 {
     addrABS = 0xFFFC;
-    uint16_t high = read(addrABS);
-    uint16_t low = read(addrABS + 1);
+    uint16_t low = read(addrABS);
+    uint16_t high = read(addrABS + 1);
 
     pc = (high << 8) | low;
 
@@ -723,6 +739,7 @@ void Cpu::reset()
     x = 0;
     y = 0;
     stackPointer = 0xFD;
+    status = 0x00 | U;
 
     addrREL = 0x0000;
     addrABS = 0x0000;

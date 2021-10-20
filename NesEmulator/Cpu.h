@@ -30,7 +30,7 @@ class Bus;
         uint8_t x = 0x00;               // X ¼Ä´æÆ÷
         uint8_t y = 0x00;               // Y ¼Ä´æÆ÷
         uint8_t stackPointer = 0x00;    // Õ»Ö¸Õë
-        uint8_t pc = 0x00;              // ³ÌĞò¼ÆÊıÆ÷
+        uint16_t pc = 0x0000;              // ³ÌĞò¼ÆÊıÆ÷
         uint8_t status = 0x00;          // ×´Ì¬¼Ä´æÆ÷
 
         void connectBus(Bus* ptr) {
