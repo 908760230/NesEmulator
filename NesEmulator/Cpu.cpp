@@ -1,5 +1,6 @@
 #include "Cpu.h"
 #include "Bus.h"
+#include "Utils.h"
 
 Cpu::Cpu() {
     instructions = { 
@@ -58,20 +59,12 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
     std::map<uint16_t, std::string> mapLines;
     uint16_t lineAddr = 0;
 
-    auto hex = [](uint32_t n, uint8_t d)
-    {
-        std::string s(d, '0');
-        for (int i = d - 1; i >= 0; i--, n >>= 4)
-            s[i] = "0123456789ABCDEF"[n & 0xF];
-        return s;
-    };
-
     while (addr <= (uint32_t)end)
     {
         lineAddr = addr;
 
         // Prefix line with instruction address
-        std::string sInst = "$" + hex(addr, 4) + ": ";
+        std::string sInst = "$" + Utils::toHex(addr, 4) + ": ";
 
         // Read instruction, and get its readable name
         uint8_t opcode = busPtr->read(addr, true); addr++;
@@ -89,66 +82,66 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
         else if (instructions[opcode].mode == &Cpu::IMM)
         {
             value = busPtr->read(addr, true); addr++;
-            sInst += "#$" + hex(value, 2) + " {IMM}";
+            sInst += "#$" + Utils::toHex(value, 2) + " {IMM}";
         }
         else if (instructions[opcode].mode == &Cpu::ZP0)
         {
             low = busPtr->read(addr, true); addr++;
             high = 0x00;
-            sInst += "$" + hex(low, 2) + " {ZP0}";
+            sInst += "$" + Utils::toHex(low, 2) + " {ZP0}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPX)
         {
             low = busPtr->read(addr, true); addr++;
             high = 0x00;
-            sInst += "$" + hex(low, 2) + ", X {ZPX}";
+            sInst += "$" + Utils::toHex(low, 2) + ", X {ZPX}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPY)
         {
             low = busPtr->read(addr, true); addr++;
             high = 0x00;
-            sInst += "$" + hex(low, 2) + ", Y {ZPY}";
+            sInst += "$" + Utils::toHex(low, 2) + ", Y {ZPY}";
         }
         else if (instructions[opcode].mode == &Cpu::IZX)
         {
             low = busPtr->read(addr, true); addr++;
             high = 0x00;
-            sInst += "($" + hex(low, 2) + ", X) {IZX}";
+            sInst += "($" + Utils::toHex(low, 2) + ", X) {IZX}";
         }
         else if (instructions[opcode].mode == &Cpu::IZY)
         {
             low = busPtr->read(addr, true); addr++;
             high = 0x00;
-            sInst += "($" + hex(low, 2) + "), Y {IZY}";
+            sInst += "($" + Utils::toHex(low, 2) + "), Y {IZY}";
         }
         else if (instructions[opcode].mode == &Cpu::ABS)
         {
             low = busPtr->read(addr, true); addr++;
             high = busPtr->read(addr, true); addr++;
-            sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + " {ABS}";
+            sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + " {ABS}";
         }
         else if (instructions[opcode].mode == &Cpu::ABX)
         {
             low = busPtr->read(addr, true); addr++;
             high = busPtr->read(addr, true); addr++;
-            sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + ", X {ABX}";
+            sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ", X {ABX}";
         }
         else if (instructions[opcode].mode == &Cpu::ABY)
         {
             low = busPtr->read(addr, true); addr++;
             high = busPtr->read(addr, true); addr++;
-            sInst += "$" + hex((uint16_t)(high << 8) | low, 4) + ", Y {ABY}";
+            sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ", Y {ABY}";
         }
         else if (instructions[opcode].mode == &Cpu::IND)
         {
             low = busPtr->read(addr, true); addr++;
             high = busPtr->read(addr, true); addr++;
-            sInst += "($" + hex((uint16_t)(high << 8) | low, 4) + ") {IND}";
+            sInst += "($" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ") {IND}";
         }
         else if (instructions[opcode].mode == &Cpu::REL)
         {
             value = busPtr->read(addr, true); addr++;
-            sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
+            sInst += "$" + Utils::toHex(value, 2) + " [$" + Utils::toHex(addr + value, 4) + "] {REL}";
         }
 
         // Add the formed string to a std::map, using the instruction's

@@ -2,6 +2,7 @@
 #include <sstream>
 #include "Bus.h"
 #include "Cpu.h"
+#include "Utils.h"
 
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
@@ -14,37 +15,27 @@ private:
 
 public:
     Application() {
-        sAppName = "6502 cpu demostration";
+        sAppName = "Nes Emulator";
     }
 
 private:
-    std::string hex(uint32_t value, uint8_t d) {
-        std::string result(d, '0');
-        std::string flag("0123456789ABCDEF");
-        
-        for (int i = d - 1; i >= 0; i--) {
-            result[i] = flag[value & 0xF];
-            value >>= 4;
-        }
-        return result;
-    }
 
     void DrawRam(int x, int y, uint16_t nAddr, int nRows, int nColumns)
     {
         int nRamX = x, nRamY = y;
         for (int row = 0; row < nRows; row++)
         {
-            std::string sOffset = "$" + hex(nAddr, 4) + ":";
+            std::string sOffset = "$" + Utils::toHex(nAddr, 4) + ":";
             for (int col = 0; col < nColumns; col++)
             {
-                sOffset += " " + hex(nes.read(nAddr, true), 2);
+                sOffset += " " + Utils::toHex(nes.read(nAddr, true), 2);
                 nAddr += 1;
             }
             DrawString(nRamX, nRamY, sOffset);
             nRamY += 10;
         }
     }
-
+  
     void DrawCpu(int x, int y)
     {
         std::string status = "STATUS: ";
@@ -57,11 +48,11 @@ private:
         DrawString(x + 144, y, "I", nes.cpu.status & Cpu::I ? olc::GREEN : olc::RED);
         DrawString(x + 160, y, "Z", nes.cpu.status & Cpu::Z ? olc::GREEN : olc::RED);
         DrawString(x + 178, y, "C", nes.cpu.status & Cpu::C ? olc::GREEN : olc::RED);
-        DrawString(x, y + 10, "PC: $" + hex(nes.cpu.pc, 4));
-        DrawString(x, y + 20, "A: $" + hex(nes.cpu.accumulator, 2) + "  [" + std::to_string(nes.cpu.accumulator) + "]");
-        DrawString(x, y + 30, "X: $" + hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
-        DrawString(x, y + 40, "Y: $" + hex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
-        DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.stackPointer, 4));
+        DrawString(x, y + 10, "PC: $" + Utils::toHex(nes.cpu.pc, 4));
+        DrawString(x, y + 20, "A: $" + Utils::toHex(nes.cpu.accumulator, 2) + "  [" + std::to_string(nes.cpu.accumulator) + "]");
+        DrawString(x, y + 30, "X: $" + Utils::toHex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
+        DrawString(x, y + 40, "Y: $" + Utils::toHex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
+        DrawString(x, y + 50, "Stack P: $" + Utils::toHex(nes.cpu.stackPointer, 4));
     }
 
     void DrawCode(int x, int y, int nLines)
