@@ -2,6 +2,8 @@
 #include "Bus.h"
 #include "Utils.h"
 
+#define LOGMODE
+
 Cpu::Cpu() {
     instructions = { 
         { "BRK", &Cpu::BRK, &Cpu::IMM, 7 },{ "ORA", &Cpu::ORA, &Cpu::IZX, 6 },{ "???", &Cpu::XXX, &Cpu::IMP, 2 },{ "???", &Cpu::XXX, &Cpu::IMP, 8 },{ "???", &Cpu::NOP, &Cpu::IMP, 3 },{ "ORA", &Cpu::ORA, &Cpu::ZP0, 3 },{ "ASL", &Cpu::ASL, &Cpu::ZP0, 5 },{ "???", &Cpu::XXX, &Cpu::IMP, 5 },{ "PHP", &Cpu::PHP, &Cpu::IMP, 3 },{ "ORA", &Cpu::ORA, &Cpu::IMM, 2 },{ "ASL", &Cpu::ASL, &Cpu::IMP, 2 },{ "???", &Cpu::XXX, &Cpu::IMP, 2 },{ "???", &Cpu::NOP, &Cpu::IMP, 4 },{ "ORA", &Cpu::ORA, &Cpu::ABS, 4 },{ "ASL", &Cpu::ASL, &Cpu::ABS, 6 },{ "???", &Cpu::XXX, &Cpu::IMP, 6 },
@@ -30,12 +32,12 @@ Cpu::~Cpu()
 
 void Cpu::write(uint16_t addr, uint8_t data)
 {
-    busPtr->write(addr, data);
+    busPtr->cpuWrite(addr, data);
 }
 
 uint8_t Cpu::read(uint16_t addr)
 {
-    return busPtr->read(addr);
+    return busPtr->cpuRead(addr);
 }
 
 uint8_t Cpu::getFlag(FLAGS flag)
@@ -49,9 +51,10 @@ void Cpu::setFlag(FLAGS flag, bool value)
     if (value) {
         status |= flag;
     }
-    else status &= ~flag;  //Çå³ı
+    else status &= ~flag;  //ï¿½ï¿½ï¿½
 }
 
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¶ï¿½ï¿½ï¿½ï¿½ï¿½Ê½
 std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
 {
     uint32_t addr = start;
@@ -67,7 +70,7 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
         std::string sInst = "$" + Utils::toHex(addr, 4) + ": ";
 
         // Read instruction, and get its readable name
-        uint8_t opcode = busPtr->read(addr, true); addr++;
+        uint8_t opcode = busPtr->cpuRead(addr, true); addr++;
         sInst += instructions[opcode].name + " ";
 
         // Get oprands from desired locations, and form the
@@ -81,67 +84,67 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
         }
         else if (instructions[opcode].mode == &Cpu::IMM)
         {
-            value = busPtr->read(addr, true); addr++;
+            value = busPtr->cpuRead(addr, true); addr++;
             sInst += "#$" + Utils::toHex(value, 2) + " {IMM}";
         }
         else if (instructions[opcode].mode == &Cpu::ZP0)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
             high = 0x00;
             sInst += "$" + Utils::toHex(low, 2) + " {ZP0}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPX)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
             high = 0x00;
             sInst += "$" + Utils::toHex(low, 2) + ", X {ZPX}";
         }
         else if (instructions[opcode].mode == &Cpu::ZPY)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
             high = 0x00;
             sInst += "$" + Utils::toHex(low, 2) + ", Y {ZPY}";
         }
         else if (instructions[opcode].mode == &Cpu::IZX)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
             high = 0x00;
             sInst += "($" + Utils::toHex(low, 2) + ", X) {IZX}";
         }
         else if (instructions[opcode].mode == &Cpu::IZY)
         {
-            low = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
             high = 0x00;
             sInst += "($" + Utils::toHex(low, 2) + "), Y {IZY}";
         }
         else if (instructions[opcode].mode == &Cpu::ABS)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
+            high = busPtr->cpuRead(addr, true); addr++;
             sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + " {ABS}";
         }
         else if (instructions[opcode].mode == &Cpu::ABX)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
+            high = busPtr->cpuRead(addr, true); addr++;
             sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ", X {ABX}";
         }
         else if (instructions[opcode].mode == &Cpu::ABY)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
+            high = busPtr->cpuRead(addr, true); addr++;
             sInst += "$" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ", Y {ABY}";
         }
         else if (instructions[opcode].mode == &Cpu::IND)
         {
-            low = busPtr->read(addr, true); addr++;
-            high = busPtr->read(addr, true); addr++;
+            low = busPtr->cpuRead(addr, true); addr++;
+            high = busPtr->cpuRead(addr, true); addr++;
             sInst += "($" + Utils::toHex((uint16_t)(high << 8) | low, 4) + ") {IND}";
         }
         else if (instructions[opcode].mode == &Cpu::REL)
         {
-            value = busPtr->read(addr, true); addr++;
-            sInst += "$" + Utils::toHex(value, 2) + " [$" + Utils::toHex(addr + value, 4) + "] {REL}";
+            value = busPtr->cpuRead(addr, true); addr++;
+            sInst += "$" + Utils::toHex(value, 2) + " [$" + Utils::toHex(addr + (int8_t)value, 4) + "] {REL}";
         }
 
         // Add the formed string to a std::map, using the instruction's
@@ -154,19 +157,19 @@ std::map<uint16_t, std::string> Cpu::disassemble(uint16_t start, uint16_t end)
     return mapLines;
 }
 
-//Ö´ĞĞ¼òµ¥µÄ²Ù×÷£¬ÀıÈçÉèÖÃ×´Ì¬Î»¡£ÕâÀïÉèÖÃ¸³ÖµÎªÀÛ¼ÓÆ÷ÒÔ»ñÈ¡ÀàËÆPHAÖ¸Áî¡£
+//Ö´ï¿½Ğ¼òµ¥µÄ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¸ï¿½ÖµÎªï¿½Û¼ï¿½ï¿½ï¿½ï¿½Ô»ï¿½È¡ï¿½ï¿½ï¿½ï¿½PHAÖ¸ï¿½î¡£
 inline uint8_t Cpu::IMP() {
     fetched = accumulator;
     return 0;
 }
 
-//Ö±½ÓÈ¡Ò»¸ö×Ö½ÚµÄÖµ
+//Ö±ï¿½ï¿½È¡Ò»ï¿½ï¿½ï¿½Ö½Úµï¿½Öµ
 inline uint8_t Cpu::IMM() {
     addrABS = pc++;
     return 0;
 }
 
-// ÒÔ¾ø¶ÔµØÖ·µÄĞÎÊ½·ÃÎÊ 0x0000~0x00FF
+// ï¿½Ô¾ï¿½ï¿½Ôµï¿½Ö·ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½ 0x0000~0x00FF
 uint8_t Cpu::ZP0()
 {   
     addrABS = read(pc);
@@ -175,7 +178,7 @@ uint8_t Cpu::ZP0()
     return 0;
 }
 
-// ÓëÁãÒ³Ñ°Ö·ÏàÍ¬£¬µ«x¼Ä´æÆ÷µÄÄÚÈİ»áÌí¼Óµ½µ¥×Ö½ÚµØÖ·ÖĞ
+// ï¿½ï¿½ï¿½ï¿½Ò³Ñ°Ö·ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½xï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ»ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ö½Úµï¿½Ö·ï¿½ï¿½
 uint8_t Cpu::ZPX()
 {
     addrABS = read(pc) + x;
@@ -185,7 +188,7 @@ uint8_t Cpu::ZPX()
 }
 
 
-//y¼Ä´æÆ÷µÄÄÚÈİ»áÌí¼Óµ½µ¥×Ö½ÚµØÖ·ÖĞ
+//yï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ»ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ö½Úµï¿½Ö·ï¿½ï¿½
 uint8_t Cpu::ZPY()
 {
     addrABS = read(pc) + y;
@@ -195,7 +198,7 @@ uint8_t Cpu::ZPY()
     return 0;
 }
 
-// ·ÖÖ§Ö¸Áî¶ÀÓĞµÄÑ°Ö·Ä£Ê½£¬ÆäµØÖ·±ØĞëÎ»ÓÚ·ÖÖ§Ö¸ÁîµÄ-128 ~ 127Ö®¼ä
+// ï¿½ï¿½Ö§Ö¸ï¿½ï¿½ï¿½ï¿½Ğµï¿½Ñ°Ö·Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ú·ï¿½Ö§Ö¸ï¿½ï¿½ï¿½-128 ~ 127Ö®ï¿½ï¿½
 uint8_t Cpu::REL()
 {
     addrREL = read(pc);
@@ -204,7 +207,7 @@ uint8_t Cpu::REL()
     return 0;
 }
 
-// 16 bit ¶¼»á±»Ê¹ÓÃ
+// 16 bit ï¿½ï¿½ï¿½á±»Ê¹ï¿½ï¿½
 uint8_t Cpu::ABS()
 {
     uint16_t low = read(pc);
@@ -215,7 +218,7 @@ uint8_t Cpu::ABS()
     return 0;
 }
 
-// ÔÚ¾ø¶ÔµØÖ·µÄ»ù´¡ÉÏ¼ÓÉÏ ¼Ä´æÆ÷xµÄÖµ
+// ï¿½Ú¾ï¿½ï¿½Ôµï¿½Ö·ï¿½Ä»ï¿½ï¿½ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½ ï¿½Ä´ï¿½ï¿½ï¿½xï¿½ï¿½Öµ
 uint8_t Cpu::ABX()
 {
     uint16_t low = read(pc);
@@ -225,7 +228,7 @@ uint8_t Cpu::ABX()
     addrABS = (high << 8) | low;
     addrABS += x;
 
-    if ((addrABS & 0xFF00) != (high << 8)) return 1; // ÅĞ¶ÏÔ½½ç
+    if ((addrABS & 0xFF00) != (high << 8)) return 1; // Í¨ï¿½ï¿½ï¿½Û¼Ó½ï¿½Î»ï¿½Ğ¶ï¿½ï¿½Ç·ï¿½Ô½ï¿½ï¿½
     return 0;
 }
 
@@ -238,7 +241,7 @@ uint8_t Cpu::ABY()
     addrABS = (high << 8) | low;
     addrABS += y;
 
-    if ((addrABS & 0xFF00) != (high << 8)) return 1; // ÅĞ¶ÏÔ½½ç
+    if ((addrABS & 0xFF00) != (high << 8)) return 1; // ï¿½Ğ¶ï¿½Ô½ï¿½ï¿½
     return 0;
 }
 
@@ -251,15 +254,15 @@ uint8_t Cpu::IND()
 
     uint16_t ptr = (ptr_high << 8) | ptr_low;
 
-    if (ptr_low == 0x00FF) // Ä£ÄâÓ²¼şbug
-        addrABS = (read(ptr_high & 0xFF00) << 8) | read(ptr + 0); // ÎŞĞ§µÄµØÖ·
+    if (ptr_low == 0x00FF) // Ä£ï¿½ï¿½Ó²ï¿½ï¿½bug
+        addrABS = (read(ptr_high & 0xFF00) << 8) | read(ptr + 0); // ï¿½ï¿½Ğ§ï¿½Äµï¿½Ö·
     else
         addrABS = (read(ptr + 1) << 8) | read(ptr + 0);
 
     return 0;
 }
 
-// ÏÈÍ¨¹ıpcµÃµ½Ïà¶ÔµØÖ·£¬ÔÙÍ¨¹ıXµÄÆ«ÒÆÁ¿ À´»ñÈ¡×îÖÕµØÖ·
+// ï¿½ï¿½Í¨ï¿½ï¿½pcï¿½Ãµï¿½ï¿½ï¿½Ôµï¿½Ö·ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½Xï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½Õµï¿½Ö·
 uint8_t Cpu::IZX()
 {
     uint16_t addr = read(pc);
@@ -273,7 +276,7 @@ uint8_t Cpu::IZX()
     return 0;
 }
 
-// ÏÈ¼ä½ÓÑ°Ö·¸ßµÍÎ»£¬µÃµ½Ïà¶ÔÓ¦µÄ16bitµØÖ·£¬È»ºóÔÙÀûÓÃ¼Ä´æÆ÷YµÄÖµµÃµ½×îÖÕµÄµØÖ·
+// ï¿½È¼ï¿½ï¿½Ñ°Ö·ï¿½ßµï¿½Î»ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½16bitï¿½ï¿½Ö·ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¼Ä´ï¿½ï¿½ï¿½Yï¿½ï¿½Öµï¿½Ãµï¿½ï¿½ï¿½ï¿½ÕµÄµï¿½Ö·
 uint8_t Cpu::IZY()
 {
     uint16_t addr = read(pc);
@@ -285,35 +288,36 @@ uint8_t Cpu::IZY()
     addrABS = (addr_high << 8) | addr_low;
     addrABS += y;
 
-    if ((addrABS & 0xFF00) != addr_high) return 1; // Ô½¹ıÁË±ß½ç
+    if ((addrABS & 0xFF00) != addr_high) return 1; // Ô½ï¿½ï¿½ï¿½Ë±ß½ï¿½
     return 0;
 }
 
-// Ìí¼Ó½øÎ»
+// ï¿½ï¿½Ó½ï¿½Î»
 // a = a + M + C
-// ±êÖ¾£º C V N Z
+// ï¿½ï¿½Ö¾ï¿½ï¿½ C V N Z
 uint8_t Cpu::ADC()
 {
-    // »ñÈ¡Êı¾İ£¬Ìí¼Óµ½ÀÛ¼ÓÆ÷ÖĞ
+    // ï¿½ï¿½È¡ï¿½ï¿½ï¿½İ£ï¿½ï¿½ï¿½Óµï¿½ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½
     fetch();
 
     uint16_t tmp = (uint16_t)accumulator + (uint16_t)fetched + (uint16_t)getFlag(C);
     
-    setFlag(C, tmp > 255); // ÉèÖÃ½øÎ»±êÖ¾
+    setFlag(C, tmp > 255); // ï¿½ï¿½ï¿½Ã½ï¿½Î»ï¿½ï¿½Ö¾
     setFlag(Z, (tmp & 0x00FF == 0));
-
-    uint16_t flag = ~((uint16_t)accumulator ^ (uint16_t)fetched) & (uint16_t)accumulator ^ (uint16_t)tmp;
-    // ÉèÖÃÓĞ·ûºÅÒç³ö
-    setFlag(V, flag & 0x0080);
-    // ÉèÖÃ¸ºÊı±êÖ¾
     setFlag(N, tmp & 0x80);
 
-    accumulator = tmp & 0x00FF; // ½«½á¹û¼ÓÔØµ½ÀÛ¼ÓÆ÷ÖĞ
+    // v = (A ^ R) & ~(A ^ M)
+    uint16_t flag = ~(uint16_t(accumulator) ^ uint16_t(fetched)) & uint16_t(accumulator) ^ uint16_t(tmp);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ğ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    setFlag(V, flag & 0x0080);
+    // ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
 
-    return 1;// ĞèÒª¶îÍâµÄÒ»¸öÊ±ÖÓÖÜÆÚ
+    accumulator = tmp & 0x00FF; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½
+
+    return 1;// ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
-// Âß¼­Óë²Ù×÷
+// ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 // A = A & M
 // N Z
 uint8_t Cpu::AND()
@@ -325,7 +329,7 @@ uint8_t Cpu::AND()
     return 1;
 }
 
-// Ëã·¨×óÒÆ
+// ï¿½ã·¨ï¿½ï¿½ï¿½ï¿½
 // A = C <- (A<<1) <- 0
 // N Z C
 uint8_t Cpu::ASL()
@@ -342,7 +346,7 @@ uint8_t Cpu::ASL()
     return 0;
 }
 
-// ·ÖÖ§Ö¸Áî£ºÈç¹û½øÎ»±»Çå³ı
+// ï¿½ï¿½Ö§Ö¸ï¿½î£ºï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::BCC()
 {
     if (getFlag(C) == 0) {
@@ -356,7 +360,7 @@ uint8_t Cpu::BCC()
     return 0;
 }
 
-// ·ÖÖ§Ö¸Áî£º Èç¹û½øÎ»±»ÉèÖÃ
+// ï¿½ï¿½Ö§Ö¸ï¿½î£º ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::BCS()
 {
     if (getFlag(C) == 1) {
@@ -393,7 +397,7 @@ uint8_t Cpu::BIT()
     return 0;
 }
 
-//·ÖÖ§Ö¸Áî£º Èç¹ûÊÇ¸ºÊı
+//ï¿½ï¿½Ö§Ö¸ï¿½î£º ï¿½ï¿½ï¿½ï¿½Ç¸ï¿½ï¿½ï¿½
 uint8_t Cpu::BMI()
 {
     if (getFlag(N) == 1) {
@@ -407,7 +411,7 @@ uint8_t Cpu::BMI()
     return uint8_t();
 }
 
-// ·ÖÖ§Ö¸Áî£ºÈç¹û²»ÏàµÈ
+// ï¿½ï¿½Ö§Ö¸ï¿½î£ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::BNE()
 {
     if (getFlag(Z) == 0) {
@@ -421,7 +425,7 @@ uint8_t Cpu::BNE()
     return 0;
 }
 
-//·ÖÖ§Ö¸Áî£ºÈç¹ûÊÇÕıÊı
+// å¦‚æœè´Ÿæ•°ç¬¦å·ä¸ºå‡ï¼Œåˆ™åœ°å€ä¸ºpc + ç›¸å¯¹åç§»åœ°å€
 uint8_t Cpu::BPL()
 {
     if (getFlag(N) == 0) {
@@ -435,17 +439,17 @@ uint8_t Cpu::BPL()
     return 0;
 }
 
-// ÖĞ¶ÏÖ¸Áî
+// ï¿½Ğ¶ï¿½Ö¸ï¿½ï¿½
 uint8_t Cpu::BRK()
 {
     pc++;
-    setFlag(I, 1); // ¿ªÆôÖĞ¶Ï
-    write(0x0100 + stackPointer, (pc >> 8) & 0x00FF); //Ğ´Èë¸ßÎ»
+    setFlag(I, 1); // ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½
+    write(0x0100 + stackPointer, (pc >> 8) & 0x00FF); //Ğ´ï¿½ï¿½ï¿½Î»
     stackPointer--;
-    write(0x0100 + stackPointer, pc & 0x00FF); //Ğ´ÈëµØÎ»
+    write(0x0100 + stackPointer, pc & 0x00FF); //Ğ´ï¿½ï¿½ï¿½Î»
     stackPointer--;
 
-    setFlag(B, 1); //ÖĞ¶Ï
+    setFlag(B, 1); //ï¿½Ğ¶ï¿½
     write(0x0100 + stackPointer, status);
     stackPointer--;
     setFlag(B, 0);
@@ -454,7 +458,7 @@ uint8_t Cpu::BRK()
     return 0;
 }
 
-// ·ÖÖ§Ö¸Áî£ºÈç¹ûÒç³ö±»Çå³ı
+// ï¿½ï¿½Ö§Ö¸ï¿½î£ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::BVC()
 {
     if (getFlag(V) == 0) {
@@ -467,7 +471,7 @@ uint8_t Cpu::BVC()
     }
     return 0;
 }
-// Èç¹ûÒç³ö±»ÉèÖÃ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::BVS()
 {
     if (getFlag(V) == 1) {
@@ -482,31 +486,31 @@ uint8_t Cpu::BVS()
     return 0;
 }
 
-// Çå³ı½øÎ»±êÖ¾
+// ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ö¾
 uint8_t Cpu::CLC()
 {
     setFlag(C, false);
     return 0;
 }
-// Çå³ıÊ®½øÖÆÄ£Ê½±êÖ¾
+// å…³é—­åè¿›åˆ¶æ¨¡å¼
 uint8_t Cpu::CLD()
 {
     setFlag(D, false);
     return 0;
 }
-// ¹Ø±ÕÖĞ¶Ï
+// ï¿½Ø±ï¿½ï¿½Ğ¶ï¿½
 uint8_t Cpu::CLI()
 {
     setFlag(I, false);
     return 0;
 }
-//Çå³ı Òç³ö±êÖ¾
+//ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
 uint8_t Cpu::CLV()
 {
     setFlag(V, false);
     return 0;
 }
-// ±È½ÏÀÛ¼ÓÆ÷   
+// ï¿½È½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½   
 uint8_t Cpu::CMP()
 {
     fetch();
@@ -537,7 +541,7 @@ uint8_t Cpu::CPY()
     return 0;
 }
 
-// ÄÚ´æÎ»ÖÃµÄÖµ×Ô¼õÒ»
+// ï¿½Ú´ï¿½Î»ï¿½Ãµï¿½Öµï¿½Ô¼ï¿½Ò»
 uint8_t Cpu::DEC()
 {
     fetch();
@@ -547,7 +551,7 @@ uint8_t Cpu::DEC()
     setFlag(N, tmp & 0x0080);
     return 1;
 }
-// x¼Ä´æÆ÷µÄÖµ¼õÒ»
+// xï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Ò»
 uint8_t Cpu::DEX()
 {
     x--;
@@ -555,7 +559,7 @@ uint8_t Cpu::DEX()
     setFlag(N, x & 0x80);
     return 0;
 }
-// y¼Ä´æÆ÷µÄÖµ¼õÒ»
+// yï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Ò»
 uint8_t Cpu::DEY()
 {
     y--;
@@ -564,7 +568,7 @@ uint8_t Cpu::DEY()
     return 0;
 }
 
-// Òì»ò²Ù×÷
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::EOR()
 {
     fetch();
@@ -573,7 +577,7 @@ uint8_t Cpu::EOR()
     setFlag(N, accumulator & 0x80);
     return 1;
 }
-// ÄÚ´æÎ»ÖÃµÄÖµ¼ÓÒ»
+// ï¿½Ú´ï¿½Î»ï¿½Ãµï¿½Öµï¿½ï¿½Ò»
 uint8_t Cpu::INC()
 {
     fetch();
@@ -583,7 +587,7 @@ uint8_t Cpu::INC()
     setFlag(N, tmp & 0x0080);
     return 0;
 }
-// x ¼Ä´æÆ÷µÄÖµ¼ÓÒ»
+// x ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Ò»
 uint8_t Cpu::INX()
 {
     x++;
@@ -599,14 +603,14 @@ uint8_t Cpu::INY()
     setFlag(N, y & 0x80);
     return 0;
 }
-// Ìø×ªµ½addr_absÎ»ÖÃ
+// ï¿½ï¿½×ªï¿½ï¿½addr_absÎ»ï¿½ï¿½
 uint8_t Cpu::JMP()
 {
     pc = addrABS;
     return 0;
 }
-// Ìø×ªµ½×ÓÀıĞĞ³ÌĞò
-// ½«µ±Ç°PC Ñ¹ÈëÕ»ÖĞ£¬pc = addr_abs
+// ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ³ï¿½ï¿½ï¿½
+// ï¿½ï¿½ï¿½ï¿½Ç°PC Ñ¹ï¿½ï¿½Õ»ï¿½Ğ£ï¿½pc = addr_abs
 uint8_t Cpu::JSR()
 {
     pc--;
@@ -618,7 +622,7 @@ uint8_t Cpu::JSR()
     pc = addrABS;
     return 0;
 }
-// ¸³Öµ¸øÀÛ¼ÓÆ÷
+// ï¿½ï¿½Öµï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½
 uint8_t Cpu::LDA()
 {
     fetch();
@@ -627,7 +631,8 @@ uint8_t Cpu::LDA()
     setFlag(N, accumulator & 0x80);
     return 1;
 }
-// ¸³Öµ¸øy¼Ä´æÆ÷
+
+// åŠ è½½æ•°æ®åˆ° å¯„å­˜å™¨Y
 uint8_t Cpu::LDY()
 {
     fetch();
@@ -636,7 +641,8 @@ uint8_t Cpu::LDY()
     setFlag(N, y & 0x80);
     return 1;
 }
-// ¸³Öµ¸øx¼Ä´æÆ÷
+
+// åŠ è½½æ•°æ®åˆ° å¯„å­˜å™¨X
 uint8_t Cpu::LDX()
 {
     fetch();
@@ -679,13 +685,18 @@ uint8_t Cpu::XXX()
 {
     return 0;
 }
-// Ä£ÄâÊ±ÖÓÖÜÆÚ
+// Ä£ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Cpu::clock()
 {
     if (cycles == 0) {
         optCode = read(pc);
 
-        setFlag(U, true); // unused ×´Ì¬±êÖ¾ Ê¼ÖÕÉèÖÃÎª1
+#ifdef LOGMODE
+        uint16_t log_pc = pc;
+#endif // LOGMODE
+
+
+        setFlag(U, true); // unused ×´Ì¬ï¿½ï¿½Ö¾ Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª1
         pc++;
 
         cycles = instructions[optCode].cycles;
@@ -697,6 +708,18 @@ void Cpu::clock()
 
         setFlag(U, true);
 
+#ifdef LOGMODE
+        if (logFile == nullptr) logFile = fopen("olc6502.txt", "wt");
+        if (logFile != nullptr)
+        {
+            fprintf(logFile, "%10d:%02d PC:%04X %s A:%02X X:%02X Y:%02X %s%s%s%s%s%s%s%s STKP:%02X\n",
+                clockCount, 0, log_pc, "XXX", accumulator, x, y,
+                getFlag(N) ? "N" : ".", getFlag(V) ? "V" : ".", getFlag(U) ? "U" : ".",
+                getFlag(B) ? "B" : ".", getFlag(D) ? "D" : ".", getFlag(I) ? "I" : ".",
+                getFlag(Z) ? "Z" : ".", getFlag(C) ? "C" : ".", stackPointer);
+        }
+#endif // LOGMODE
+
        
     }
     clockCount++;
@@ -707,8 +730,8 @@ void Cpu::clock()
 void Cpu::reset()
 {
     addrABS = 0xFFFC;
-    uint16_t high = read(addrABS);
-    uint16_t low = read(addrABS + 1);
+    uint16_t low = read(addrABS);
+    uint16_t high = read(addrABS + 1);
 
     pc = (high << 8) | low;
 
@@ -716,6 +739,7 @@ void Cpu::reset()
     x = 0;
     y = 0;
     stackPointer = 0xFD;
+    status = 0x00 | U;
 
     addrREL = 0x0000;
     addrABS = 0x0000;
@@ -723,12 +747,12 @@ void Cpu::reset()
 
     cycles = 8;
 }
-// ÖĞ¶ÏÇëÇó
+// ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½
 void Cpu::irq()
 {
-    // Èç¹ûÃ»ÓĞ¹Ø±ÕÖĞ¶Ï
+    // ï¿½ï¿½ï¿½Ã»ï¿½Ğ¹Ø±ï¿½ï¿½Ğ¶ï¿½
     if (getFlag(I) == 0) {
-        // ½«pcÑ¹ÈëÕ»ÖĞ
+        // ï¿½ï¿½pcÑ¹ï¿½ï¿½Õ»ï¿½ï¿½
         write(0x0100 + stackPointer, (pc >> 8) & 0x00FF);
         stackPointer--;
         write(0x0100 + stackPointer, pc & 0x00FF);
@@ -748,7 +772,7 @@ void Cpu::irq()
         cycles = 7;
     }
 }
-// ²»ÄÜ±»ºöÂÔµÄ·ÇÑÚÊ½ÖĞ¶Ï£¬ËüºÍIRQÒ»Ñù£¬µ«ÊÇ´ÓÎ»ÖÃ 0xFFFA´¦¶ÁÈ¡µ½ĞÂµÄ³ÌĞò¼ÆÊıÆ÷µÄµØÖ·
+// ï¿½ï¿½ï¿½Ü±ï¿½ï¿½ï¿½ï¿½ÔµÄ·ï¿½ï¿½ï¿½Ê½ï¿½Ğ¶Ï£ï¿½ï¿½ï¿½ï¿½ï¿½IRQÒ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç´ï¿½Î»ï¿½ï¿½ 0xFFFAï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ÂµÄ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·
 void Cpu::nmi()
 {
     write(0x0100 + stackPointer, (pc >> 8) & 0x00FF);
@@ -779,7 +803,7 @@ uint8_t Cpu::fetch()
     if (!(instructions[optCode].mode == &Cpu::IMP)) fetched = read(addrABS);
     return fetched;
 }
-// Âß¼­»ò
+// ï¿½ß¼ï¿½ï¿½ï¿½
 uint8_t Cpu::ORA()
 {
     fetch();
@@ -788,14 +812,14 @@ uint8_t Cpu::ORA()
     setFlag(N, accumulator & 0x80);
     return 1;
 }
-// ½«ÀÛ¼ÓÆ÷µÄÖµÑ¹ÈëÕ»ÖĞ
+// ï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÑ¹ï¿½ï¿½Õ»ï¿½ï¿½
 uint8_t Cpu::PHA()
 {
     write(0x0100 + stackPointer, accumulator);
     stackPointer--;
     return 0;
 }
-//½«×´Ì¬¼Ä´æÆ÷Ñ¹ÈëÕ»ÖĞ£¬ÔÚÑ¹ÈëÖ®Ç° ÖĞ¶Ï±êÖ¾Ó¦¸ÃÉèÖÃÎª1
+//ï¿½ï¿½×´Ì¬ï¿½Ä´ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½Õ»ï¿½Ğ£ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½Ö®Ç° ï¿½Ğ¶Ï±ï¿½Ö¾Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª1
 uint8_t Cpu::PHP()
 {
     write(0x0100 + stackPointer, status | B | U);
@@ -804,7 +828,7 @@ uint8_t Cpu::PHP()
     stackPointer--;
     return 0;
 }
-// ´ÓÕ»ÖĞµ¯³öÖµ ¸³¸øÀÛ¼ÓÆ÷
+// ï¿½ï¿½Õ»ï¿½Ğµï¿½ï¿½ï¿½Öµ ï¿½ï¿½ï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½
 uint8_t Cpu::PLA()
 {
     stackPointer++;
@@ -814,7 +838,7 @@ uint8_t Cpu::PLA()
     return 0;
 }
 
-// ´ÓÕ»ÖĞµ¯³öÖµ ¸³¸ø×´Ì¬¼Ä´æÆ÷
+// ï¿½ï¿½Õ»ï¿½Ğµï¿½ï¿½ï¿½Öµ ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½Ä´ï¿½ï¿½ï¿½
 uint8_t Cpu::PLP()
 {
     stackPointer++;
@@ -822,7 +846,7 @@ uint8_t Cpu::PLP()
     setFlag(U, 1);
     return 0;
 }
-// ×óÒÆ
+// ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::ROL()
 {
     fetch();
@@ -834,7 +858,7 @@ uint8_t Cpu::ROL()
     else write(addrABS, tmp & 0x00FF);
     return 0;
 }
-// ÓÒÒÆ
+// ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::ROR()
 {
     fetch();
@@ -847,6 +871,7 @@ uint8_t Cpu::ROR()
     return 0;
 }
 
+// ï¿½Ğ¶Ï·ï¿½ï¿½ï¿½
 uint8_t Cpu::RTI()
 {
     stackPointer++;
@@ -873,13 +898,13 @@ uint8_t Cpu::RTS()
     return 0;
 }
 
-// ½èÈë¼õ·¨
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 // A = A - M - ( 1 - C )
 // C V N Z 
 uint8_t Cpu::SBC()
 {
     fetch();
-    uint16_t value = ((uint16_t)fetched) ^ 0x00FF; // ·­×ªµÍÏÂ8Î»
+    uint16_t value = ((uint16_t)fetched) ^ 0x00FF; // ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½8Î»
 
     uint16_t tmp = (uint16_t)accumulator + value + (uint16_t)getFlag(C);
 
@@ -891,44 +916,44 @@ uint8_t Cpu::SBC()
     accumulator = tmp & 0x00FF;
     return 1;
 }
-// ÉèÖÃ½øÎ»±êÖ¾Î»1
+// ï¿½ï¿½ï¿½Ã½ï¿½Î»ï¿½ï¿½Ö¾Î»1
 uint8_t Cpu::SEC()
 {
     setFlag(C, true);
     return 0;
 }
-// ÉèÖÃÊ®½øÖÆÄ£Ê½
+// ï¿½ï¿½ï¿½ï¿½Ê®ï¿½ï¿½ï¿½ï¿½Ä£Ê½
 uint8_t Cpu::SED()
 {
     setFlag(D, true);
     return 0;
 }
 
-// ¿ªÆôÖĞ¶Ï
+// å¼€å¯ä¸­æ–­æ¨¡å¼
 uint8_t Cpu::SEI()
 {
     setFlag(I, true);
     return 0;
 }
-// ÔÚ¾ø¶ÔµØÖ·´¦´æ´¢ÀÛ¼ÓÆ÷µÄÖµ
+// ï¿½Ú¾ï¿½ï¿½Ôµï¿½Ö·ï¿½ï¿½ï¿½æ´¢ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 uint8_t Cpu::STA()
 {
     write(addrABS, accumulator);
     return 0;
 }
-// ÔÚ¾ø¶ÔµØÖ·´¦´æ´¢X¼Ä´æÆ÷µÄÖµ
+// ï¿½Ú¾ï¿½ï¿½Ôµï¿½Ö·ï¿½ï¿½ï¿½æ´¢Xï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 uint8_t Cpu::STX()
 {
     write(addrABS, x);
     return 0;
 }
-// ÔÚ¾ø¶ÔµØÖ·´¦´æ´¢Y¼Ä´æÆ÷µÄÖµ
+// ï¿½Ú¾ï¿½ï¿½Ôµï¿½Ö·ï¿½ï¿½ï¿½æ´¢Yï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 uint8_t Cpu::STY()
 {
     write(addrABS, y);
     return 0;
 }
-// ½«ÀÛ¼ÓÆ÷µÄÖµ¸³¸ø x¼Ä´æÆ÷µÄ
+// ï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ xï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
 uint8_t Cpu::TAX()
 {
     x = accumulator;
@@ -936,7 +961,7 @@ uint8_t Cpu::TAX()
     setFlag(N, x & 0x80);
     return 0;
 }
-// ½«ÀÛ¼ÓÆ÷µÄÖµ¸³¸ø y¼Ä´æÆ÷
+// ï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ yï¿½Ä´ï¿½ï¿½ï¿½
 uint8_t Cpu::TAY()
 {
     y = accumulator;
@@ -944,7 +969,7 @@ uint8_t Cpu::TAY()
     setFlag(N, y & 0x80);
     return 0;
 }
-// ½«Õ»Ö¸ÕëµÄÖµ¸³¸øx¼Ä´æÆ÷
+// ï¿½ï¿½Õ»Ö¸ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½xï¿½Ä´ï¿½ï¿½ï¿½
 uint8_t Cpu::TSX()
 {
     x = stackPointer;
@@ -952,7 +977,7 @@ uint8_t Cpu::TSX()
     setFlag(N, x & 0x80);
     return 0;
 }
-// ½« x¼Ä´æÆ÷ µÄÖµ ¸³¸ø ÀÛ¼ÓÆ÷
+// ï¿½ï¿½ xï¿½Ä´ï¿½ï¿½ï¿½ ï¿½ï¿½Öµ ï¿½ï¿½ï¿½ï¿½ ï¿½Û¼ï¿½ï¿½ï¿½
 uint8_t Cpu::TXA()
 {
     accumulator = x;
@@ -961,13 +986,13 @@ uint8_t Cpu::TXA()
     return 0;
 }
 
-// ½«x¼Ä´æÆ÷µÄÖµ¸³¸øÕ»Ö¸Õë
+// å°†Xå¯„å­˜å™¨ï¼ˆIndex Register Xï¼‰çš„å†…å®¹å¤åˆ¶åˆ°å †æ ˆæŒ‡é’ˆï¼ˆStack Pointerï¼ŒSPï¼‰ä¸­
 uint8_t Cpu::TXS()
 {
     stackPointer = x;
     return 0;
 }
-// ½«Y¼Ä´æÆ÷µÄÖµ¸³¸øÀÛ¼ÓÆ÷
+// ï¿½ï¿½Yï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½Û¼ï¿½ï¿½ï¿½
 uint8_t Cpu::TYA()
 {
     accumulator = y;

@@ -6,6 +6,12 @@
 #include<vector>
 #include<fstream>
 #include<map>
+
+#ifdef LOGMODE
+#include<stdio.h>
+#endif
+
+
 class Bus;
 
 
@@ -17,29 +23,28 @@ class Bus;
 
         enum FLAGS
         {
-            C = (1 << 0), // Carry Bit(½øÎ»±êÖ¾)
-            Z = (1 << 1), // Áã
-            I = (1 << 2), // ½ûÓÃÖĞ¶Ï
+            C = (1 << 0), // Carry Bit(è¿›ä½æ ‡å¿—)
+            Z = (1 << 1), // zero
+            I = (1 << 2), // interruption
             D = (1 << 3), // Decimal Model
             B = (1 << 4), // Break
-            U = (1 << 5), // ÔİÊ±²»Ê¹ÓÃ
-            V = (1 << 6), // ÉÏÒç³ö
-            N = (1 << 7), // ¸ºÊı
+            U = (1 << 5), // ï¿½ï¿½Ê±ï¿½ï¿½Ê¹ï¿½ï¿½
+            V = (1 << 6), // æº¢å‡ºæ ‡å¿—
+            N = (1 << 7), // è´Ÿæ•°æ ‡å¿—
         };
-        uint8_t accumulator = 0x00;     // ÀÛ¼Ó¼Ä´æÆ÷
-        uint8_t x = 0x00;               // X ¼Ä´æÆ÷
-        uint8_t y = 0x00;               // Y ¼Ä´æÆ÷
-        uint8_t stackPointer = 0x00;    // Õ»Ö¸Õë
-        uint8_t pc = 0x00;              // ³ÌĞò¼ÆÊıÆ÷
-        uint8_t status = 0x00;          // ×´Ì¬¼Ä´æÆ÷
+        uint8_t accumulator = 0x00;     // ç´¯åŠ å™¨
+        uint8_t x = 0x00;               // X å¯„å­˜å™¨
+        uint8_t y = 0x00;               // Y å¯„å­˜å™¨
+        uint8_t stackPointer = 0x00;    // æ ˆæŒ‡é’ˆ
+        uint16_t pc = 0x0000;           // ç¨‹åºè®¡æ•°å™¨
+        uint8_t status = 0x00;          // çŠ¶æ€
 
         void connectBus(Bus* ptr) {
             busPtr = ptr;
         };
         std::map<uint16_t, std::string> disassemble(uint16_t start, uint16_t end);
 
-        // (Ñ°Ö·Ä£Ê½)Addressing Modes  ¼ä½Ó»òÖ±½Ó·ÃÎÊÄÚ´æµÄÄ£Ê½
-        // 6502ÓĞ¶àÖÖ·ÃÎÊÄÚ´æÖĞÊı¾İµÄ´¦ÀíÄ£Ê½£¬°üº¬Ö±½Ó»ò¼ä½ÓµÄ·½Ê½
+        // (6502å‹å·)Addressing Modes
         uint8_t IMP();
         uint8_t IMM();
         uint8_t ZP0();
@@ -85,7 +90,7 @@ class Bus;
         uint8_t JSR();
         uint8_t LDA();
         uint8_t LDY();
-        uint8_t LDX();
+        uint8_t LDX(); 
         uint8_t LSR();
         uint8_t NOP();
         uint8_t ORA();
@@ -111,22 +116,22 @@ class Bus;
         uint8_t TXS();
         uint8_t TYA();
 
-        uint8_t XXX(); // ±íÊ¾·Ç·¨µÄ²Ù×÷Âë
+        uint8_t XXX(); // ï¿½ï¿½Ê¾ï¿½Ç·ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½
 
-        void clock();  //Ê±ÖÓ
-        void reset();  // ÖØÖÃCPU×´Ì¬
-        void irq();    // ±íÊ¾ÖĞ¶ÏÇëÇó£¬¿É±»ºöÂÔ
-        void nmi();    //±íÊ¾·ÇÑÚÂëÖĞ¶ÏÇëÇó£¬²»¿É±»ºöÂÔ
+        void clock();  //Ê±ï¿½ï¿½
+        void reset();  // ï¿½ï¿½ï¿½ï¿½CPU×´Ì¬
+        void irq();    // ï¿½ï¿½Ê¾ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ó£¬¿É±ï¿½ï¿½ï¿½ï¿½ï¿½
+        void nmi();    //ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ó£¬²ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½
         bool complete();
 
-        uint8_t fetch();  // Èç¹û²»ÊÇ IMPÄ£Ê½,Ôò´Ó¾ø¶ÔµØÖ·ÖĞ»ñÈ¡Êı¾İ
-        uint8_t fetched = 0x00; //±íÊ¾ALUµÄÊäÈëÖµ
+        uint8_t fetch();  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ IMPÄ£Ê½,ï¿½ï¿½Ó¾ï¿½ï¿½Ôµï¿½Ö·ï¿½Ğ»ï¿½È¡ï¿½ï¿½ï¿½ï¿½
+        uint8_t fetched = 0x00; //ï¿½ï¿½Ê¾ALUï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 
-        uint16_t addrABS = 0x0000;  // Êı¾İËù´¦µÄ¾ø¶ÔµØÖ·
+        uint16_t addrABS = 0x0000;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½Ôµï¿½Ö·
         uint16_t addrREL = 0x0000;
         uint8_t optCode = 0x00;
-        uint8_t cycles = 0;         //Ê±ÖÓÖÜÆÚ
-        uint32_t clockCount = 0;    // Ê±ÖÓÊıÁ¿µÄÈ«¾ÖÀÛ¼Ó
+        uint8_t cycles = 0;         //Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint32_t clockCount = 0;    // Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½Û¼ï¿½
 
     private:
         Bus* busPtr;
@@ -140,7 +145,7 @@ class Bus;
         struct INSTRUCTION
         {
             std::string name;
-            uint8_t(Cpu::* operate)() = nullptr; // ×¢ÒâÇø·Ö ³ÉÔ±º¯ÊıºÍº¯ÊıÖ¸Õë
+            uint8_t(Cpu::* operate)() = nullptr; // ×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½Íºï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
             uint8_t(Cpu::* mode)() = nullptr;
             uint8_t cycles = 0;
         };

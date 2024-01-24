@@ -12,7 +12,11 @@ class Application : public olc::PixelGameEngine
 private:
     Bus nes;
     std::map<uint16_t, std::string> mapAsm;
+    std::shared_ptr<Cartridge> cart;
+    float residualTime = 0;
+    bool emulationRun = false;
 
+    uint8_t nSelectedPalette = 0x00;
 public:
     Application() {
         sAppName = "Nes Emulator";
@@ -28,7 +32,7 @@ private:
             std::string sOffset = "$" + Utils::toHex(nAddr, 4) + ":";
             for (int col = 0; col < nColumns; col++)
             {
-                sOffset += " " + Utils::toHex(nes.read(nAddr, true), 2);
+                sOffset += " " + Utils::toHex(nes.cpuRead(nAddr, true), 2);
                 nAddr += 1;
             }
             DrawString(nRamX, nRamY, sOffset);
@@ -89,48 +93,47 @@ private:
 
     bool OnUserCreate()
     {
-        // Load Program (assembled at https://www.masswerk.at/6502/assembler.html)
-        /*
-            *=$8000
-            LDX #10
-            STX $0000
-            LDX #3
-            STX $0001
-            LDY $0000
-            LDA #0
-            CLC
-            loop
-            ADC $0001
-            DEY
-            BNE loop
-            STA $0002
-            NOP
-            NOP
-            NOP
-        */
+        cart = std::make_shared<Cartridge>("nestest.nes");
+        if (!cart->ImageValid()) return false;
 
-        // Convert hex string into bytes for RAM
-        std::stringstream ss;
-        ss << "A2 0A 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
-        uint16_t nOffset = 0x8000;
-        while (!ss.eof())
-        {
-            std::string b;
-            ss >> b;
-            nes.ram[nOffset++] = (uint8_t)std::stoul(b, nullptr, 16);
-        }
+        nes.insertCartridge(cart);
 
-        // Set Reset Vector
-        nes.ram[0xFFFC] = 0x00;
-        nes.ram[0xFFFD] = 0x80;
-
-        // Dont forget to set IRQ and NMI vectors if you want to play with those
+        
+        ///*  https://www.masswerk.at/6502/assembler.html
+        //    *=$8000
+        //    LDX #10
+        //    STX $0000
+        //    LDX #3
+        //    STX $0001
+        //    LDY $0000
+        //    LDA #0
+        //    CLC
+        //    loop
+        //    ADC $0001
+        //    DEY
+        //    BNE loop
+        //    STA $0002
+        //    NOP
+        //    NOP
+        //    NOP
+        //*/
+        //std::stringstream ss;
+        //ss << "A2 0A 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
+        //uint16_t nOffset = 0x8000;
+        //while (!ss.eof())
+        //{
+        //    std::string b;
+        //    ss >> b;
+        //    nes.cpuRam[nOffset++] = (uint8_t)std::stoul(b, nullptr, 16);
+        //}
+        //nes.cpuRam[0xFFFC] = 0x00;
+        //nes.cpuRam[0xFFFD] = 0x80;
 
         // Extract dissassembly
         mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
 
         // Reset
-        nes.cpu.reset();
+        nes.reset();
         return true;
     }
 
@@ -138,40 +141,106 @@ private:
     {
         Clear(olc::DARK_BLUE);
 
+        nes.controlller[0] = 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::X).bHeld ? 0x80 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::Z).bHeld ? 0x40 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::A).bHeld ? 0x20 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::S).bHeld ? 0x10 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::UP).bHeld ? 0x08 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::DOWN).bHeld ? 0x04 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::LEFT).bHeld ? 0x02 : 0x00;
+        nes.controlller[0] |= GetKey(olc::Key::RIGHT).bHeld ? 0x01 : 0x00;
+       
 
-        if (GetKey(olc::Key::SPACE).bPressed)
-        {
-            do
+        if (emulationRun) {
+            if (residualTime > 0.0f) {
+                residualTime -= fElapsedTime;
+            }
+            else {
+                residualTime += (1.0f / 60.0f) - fElapsedTime;
+                do {
+                    nes.clock();
+                } while (!nes.ppu.frameComplete);
+                nes.ppu.frameComplete = false;
+            }
+
+        }
+        else {
+            // һ��һ����ģ�����
+            if(GetKey(olc::Key::C).bPressed)
             {
-                nes.cpu.clock();
-            } while (!nes.cpu.complete());
+                // ִ��������cpuָ��
+                do {
+                    nes.clock();
+                } while (!nes.cpu.complete());
+                
+                //  ִ��������clock
+                do {
+                    nes.clock();
+                } while (!nes.cpu.complete());
+
+            }
+
+            // ִ����һ֡
+            if (GetKey(olc::Key::F).bPressed) {
+                // �㹻��clock ȥ����һ֡
+                do {
+                    nes.clock();
+                } while (!nes.ppu.frameComplete);
+
+                // ʣ���ʱ������ȥ��ɵ�ǰָ��
+                do {
+                    nes.clock();
+                } while (!nes.cpu.complete());
+
+                nes.ppu.frameComplete = false;
+            }
+
         }
 
-        if (GetKey(olc::Key::R).bPressed)
-            nes.cpu.reset();
+        if (GetKey(olc::Key::SPACE).bPressed) emulationRun = !emulationRun;
+        if (GetKey(olc::Key::R).bPressed) nes.reset();
+        if (GetKey(olc::Key::P).bPressed) (++nSelectedPalette) &= 0x07;
+        
+        //DrawRam(2, 2, 0x0000, 16, 16);
+        //DrawRam(2, 182, 0x8000, 16, 16);
+        //DrawCpu(448, 2);
+        //DrawCode(448, 72, 26);
+        
+        DrawCpu(516, 2);
+        DrawCode(516, 72, 26);
 
-        if (GetKey(olc::Key::I).bPressed)
-            nes.cpu.irq();
+        //DrawString(10, 370, "SPACE = Step Instruction R = Reset, I = IRQ N = NMI");
+        const int nSwatchSize = 6;
+        for (int p = 0; p < 8; p++)
+        {
+            for (int s = 0; s < 4; s++) {
+                FillRect(516 + p * (nSwatchSize * 5) + s * nSwatchSize, 340, nSwatchSize, nSwatchSize, nes.ppu.GetColourFromPaletteRam(p, s));
+            }
+        }
+        DrawRect(516 + nSelectedPalette * (nSwatchSize * 5) - 1, 339, (nSwatchSize * 4), nSwatchSize, olc::WHITE);
+        DrawSprite(516, 348, &nes.ppu.getPatternTable(0, nSelectedPalette));
+        DrawSprite(648, 348, &nes.ppu.getPatternTable(1, nSelectedPalette));
+        DrawSprite(0, 0, &nes.ppu.getScreen(), 2);
 
-        if (GetKey(olc::Key::N).bPressed)
-            nes.cpu.nmi();
-
-        // Draw Ram Page 0x00		
-        DrawRam(2, 2, 0x0000, 16, 16);
-        DrawRam(2, 182, 0x8000, 16, 16);
-        DrawCpu(448, 2);
-        DrawCode(448, 72, 26);
-
-
-        DrawString(10, 370, "SPACE = Step Instruction    R = RESET    I = IRQ    N = NMI");
-
+        //olc::Sprite& s = nes.ppu.getPatternTable(0, nSelectedPalette);
+        //for (uint8_t y = 0; y < 30; y++)
+        //{
+        //    for (uint8_t x = 0; x < 32; x++)
+        //    {
+        //        //DrawString(x * 16, y * 16, Utils::toHex(uint32_t(nes.ppu.tblName[0][y * 32 + x]), 2));
+        //        uint8_t id = uint32_t(nes.ppu.tblName[0][y * 32 + x]);
+        //        DrawPartialSprite(x * 16, y * 16, &s, (id & 0x0F) << 3,
+        //            ((id >> 4) & 0x0F) << 3, 8, 8, 2);
+        //    }
+        //}
         return true;
     }
 };
 
 int main() {
     Application app;
-    app.Construct(680, 480, 2, 2);
+    app.Construct(750, 480, 2, 2);
     app.Start();
     return 0;
 }
