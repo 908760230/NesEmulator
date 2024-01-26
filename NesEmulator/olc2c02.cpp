@@ -115,34 +115,62 @@ uint8_t olc2c02::cpuRead(uint16_t addr, bool readOnly)
 {
 	uint8_t data = 0x00;
 
-	switch (addr)
-	{
-	case 0x0000: // Control
-		break;
-	case 0x0001: // Mask
-		break;
-	case 0x0002: // Status
-		data = (status.reg & 0xE0) | (ppu_data_buffer & 0x1F);
-		status.vertical_blank = 0;
-		address_latch = 0;
-		break;
-	case 0x0003: // OAM Address
-		break;
-	case 0x0004: // OAM Data
-		break;
-	case 0x0005: // Scroll
-		break;
-	case 0x0006: // PPU Address
-
-		break;
-	case 0x0007: // PPU Data
-		data = ppu_data_buffer;
-		ppu_data_buffer = ppuRead(vram_addr.reg);
-
-		if (vram_addr.reg > 0x3f00) data = ppu_data_buffer;
-		vram_addr.reg++;
-		break;
+	if (readOnly) {
+		switch (addr)
+		{
+		case 0x0000: // Control
+			data = control.reg;
+			break;
+		case 0x0001: // Mask
+			data = mask.reg;
+			break;
+		case 0x0002: // Status
+			data = status.reg;
+			break;
+		case 0x0003: // OAM Address
+			break;
+		case 0x0004: // OAM Data
+			break;
+		case 0x0005: // Scroll
+			break;
+		case 0x0006: // PPU Address
+			break;
+		case 0x0007: // PPU Data
+			break;
+		}
 	}
+	else {
+		switch (addr)
+		{
+		case 0x0000: // Control
+			break;
+		case 0x0001: // Mask
+			break;
+		case 0x0002: // Status
+			data = (status.reg & 0xE0) | (ppu_data_buffer & 0x1F);
+			status.vertical_blank = 0;
+			address_latch = 0;
+			break;
+		case 0x0003: // OAM Address
+			break;
+		case 0x0004: // OAM Data
+			break;
+		case 0x0005: // Scroll
+			break;
+		case 0x0006: // PPU Address
+
+			break;
+		case 0x0007: // PPU Data
+			data = ppu_data_buffer;
+			ppu_data_buffer = ppuRead(vram_addr.reg);
+
+			if (vram_addr.reg > 0x3f00) data = ppu_data_buffer;
+			vram_addr.reg++;
+			break;
+		}
+	}
+
+	
 
 	return data;
 }
