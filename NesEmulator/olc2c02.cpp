@@ -188,7 +188,6 @@ void olc2c02::cpuWrite(uint16_t addr, uint8_t data)
 		mask.reg = data;
 		break;
 	case 0x0002: // Status
-		status.reg = data;
 		break;
 	case 0x0003: // OAM Address
 		break;
@@ -429,11 +428,13 @@ void olc2c02::clock()
 	if (scanLine == -1 && cycle >= 280 && cycle < 305) {
 		TransferAddressY();
 	}
-
-	if (scanLine == 241 && cycle == 1) { // 进入不能显示的空白区域
-		status.vertical_blank = 1;
-		if (control.enable_nmi) nmi = true;
+	if (scanLine >= 241 && scanLine < 261) {
+		if (scanLine == 241 && cycle == 1) { // 进入不能显示的空白区域
+			status.vertical_blank = 1;
+			if (control.enable_nmi) nmi = true;
+		}
 	}
+	
 
 	uint8_t bg_pixel = 0x00;
 	uint8_t bg_palette = 0x00;
@@ -461,4 +462,26 @@ void olc2c02::clock()
 			frameComplete = true;
 		}
 	}
+}
+
+void olc2c02::reset()
+{
+	fine_x = 0x00;
+	address_latch = 0x00;
+	ppu_data_buffer = 0x00;
+	scanLine = 0;
+	cycle = 0;
+	bg_next_tile_id = 0x00;
+	bg_next_tile_attrib = 0x00;
+	bg_next_tile_lsb = 0x00;
+	bg_next_tile_msb = 0x00;
+	bg_shifter_pattern_lo = 0x0000;
+	bg_shifter_pattern_hi = 0x0000;
+	bg_shifter_attrib_lo = 0x0000;
+	bg_shifter_attrib_hi = 0x0000;
+	status.reg = 0x00;
+	mask.reg = 0x00;
+	control.reg = 0x00;
+	vram_addr.reg = 0x0000;
+	tram_addr.reg = 0x0000;
 }

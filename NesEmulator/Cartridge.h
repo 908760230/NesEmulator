@@ -29,6 +29,7 @@ public:
 	bool ppuRead(uint16_t addr, uint8_t& data);
 	bool ppuWrite(uint16_t addr, uint8_t data);
 
+	void reset();
 private:
 	bool bImageValid = false;
 	uint8_t nMapperID = 0;

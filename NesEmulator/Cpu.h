@@ -118,7 +118,7 @@ class Bus;
 
         uint8_t XXX(); // ��ʾ�Ƿ��Ĳ�����
 
-        void clock();  //ʱ��
+        void clock();  // 
         void reset();  // ����CPU״̬
         void irq();    // ��ʾ�ж����󣬿ɱ�����
         void nmi();    //��ʾ�������ж����󣬲��ɱ�����

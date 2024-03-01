@@ -36,6 +36,7 @@ public:
 
 	void connectCartridge(const std::shared_ptr<Cartridge>& cartridge);
 	void clock();
+	void reset();
 
 	bool frameComplete = false;
 	bool nmi = false;

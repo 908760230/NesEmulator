@@ -2,7 +2,7 @@
 #include "Bus.h"
 #include "Utils.h"
 
-#define LOGMODE
+//#define LOGMODE
 
 Cpu::Cpu() {
     instructions = { 
@@ -163,7 +163,7 @@ inline uint8_t Cpu::IMP() {
     return 0;
 }
 
-//ֱ��ȡһ���ֽڵ�ֵ
+//立即模式
 inline uint8_t Cpu::IMM() {
     addrABS = pc++;
     return 0;
@@ -691,12 +691,9 @@ void Cpu::clock()
     if (cycles == 0) {
         optCode = read(pc);
 
-#ifdef LOGMODE
         uint16_t log_pc = pc;
-#endif // LOGMODE
 
-
-        setFlag(U, true); // unused ״̬��־ ʼ������Ϊ1
+        setFlag(U, true); // 未使用标志总设置为 1
         pc++;
 
         cycles = instructions[optCode].cycles;
@@ -713,13 +710,17 @@ void Cpu::clock()
         if (logFile != nullptr)
         {
             fprintf(logFile, "%10d:%02d PC:%04X %s A:%02X X:%02X Y:%02X %s%s%s%s%s%s%s%s STKP:%02X\n",
-                clockCount, 0, log_pc, "XXX", accumulator, x, y,
+                clockCount, 0, pc, "XXX", accumulator, x, y,
                 getFlag(N) ? "N" : ".", getFlag(V) ? "V" : ".", getFlag(U) ? "U" : ".",
                 getFlag(B) ? "B" : ".", getFlag(D) ? "D" : ".", getFlag(I) ? "I" : ".",
                 getFlag(Z) ? "Z" : ".", getFlag(C) ? "C" : ".", stackPointer);
         }
 #endif // LOGMODE
-
+    printf("%10d:%02d PC:%04X %s A:%02X X:%02X Y:%02X %s%s%s%s%s%s%s%s STKP:%02X\n",
+            clockCount, 0, log_pc, "XXX", accumulator, x, y,
+            getFlag(N) ? "N" : ".", getFlag(V) ? "V" : ".", getFlag(U) ? "U" : ".",
+            getFlag(B) ? "B" : ".", getFlag(D) ? "D" : ".", getFlag(I) ? "I" : ".",
+            getFlag(Z) ? "Z" : ".", getFlag(C) ? "C" : ".", stackPointer);
        
     }
     clockCount++;

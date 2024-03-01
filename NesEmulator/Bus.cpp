@@ -60,6 +60,7 @@ void Bus::insertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 void Bus::reset()
 {
     cpu.reset();
+    ppu.reset();
     nSystemClockCounter = 0;
 }
 
